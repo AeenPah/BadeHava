@@ -1,0 +1,6 @@
+@BadeHava_HostAddress = http://localhost:5058
+
+GET {{BadeHava_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
