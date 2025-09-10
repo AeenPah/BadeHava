@@ -29,3 +29,5 @@ yarn-error.log*
 # Others
 *.log
 .DS_Store
+.config/
+dotnet-install.sh
