@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using BadeHava.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
