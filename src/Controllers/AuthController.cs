@@ -8,13 +8,13 @@ namespace BadeHava.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly UserService _userService;
-    public AuthController(UserService userService) { this._userService = userService; }
+    private readonly AuthService _authService;
+    public AuthController(AuthService userService) { this._authService = userService; }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var result = await _userService.RegisterUser(request.Username, request.Password);
+        var result = await _authService.RegisterUser(request.Username, request.Password);
         if (!result.Success) return Conflict(result);
 
         return Created("", result);
@@ -23,7 +23,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var result = await _userService.LoginUser(request.Username, request.Password, Response);
+        var result = await _authService.LoginUser(request.Username, request.Password, Response);
         if (!result.Success) return Conflict(result);
 
         return Ok(result);

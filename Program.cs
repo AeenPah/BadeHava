@@ -17,6 +17,7 @@ builder.Services.AddCors(options =>
             );
 });
 
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
