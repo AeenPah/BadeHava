@@ -24,7 +24,7 @@ public class UserService
             return new Response<RegisterResponse>
             {
                 Success = false,
-                Message = "User does not exist"
+                Message = "Username already exist!"
             };
 
         var (PasswordHash, salt) = PasswordHasher.Hash(password);
@@ -49,7 +49,7 @@ public class UserService
         };
     }
 
-    public async Task<Response<LoginResponse>> LoginUser(string username, string password)
+    public async Task<Response<LoginResponse>> LoginUser(string username, string password, HttpResponse httpResponse)
     {
         var existingUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
         if (existingUser is null)
@@ -70,15 +70,32 @@ public class UserService
         string refreshToken = TokenHandler.GenerateRefreshToken();
         string accessToken = TokenHandler.GenerateAccessToken(existingUser, secret);
 
+        // Update Users refreshToken DB
+        existingUser.RefreshToken = refreshToken;
+        existingUser.RefreshTokenExpire = DateTime.UtcNow.AddDays(3);
+        _dbContext.Users.Update(existingUser);
+        await _dbContext.SaveChangesAsync();
+
+        // Save refresh Token in the cookie
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            // TODO: make it true later
+            Secure = false,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddDays(4)
+        };
+        httpResponse.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+
         return new Response<LoginResponse>
         {
             Success = true,
             Message = "Login successful",
             Data = new LoginResponse
             {
+                UserId = existingUser.Id,
                 AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                User = existingUser
+                Username = existingUser.Username,
             }
         };
     }

@@ -23,7 +23,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var result = await _userService.LoginUser(request.Username, request.Password);
+        var result = await _userService.LoginUser(request.Username, request.Password, Response);
         if (!result.Success) return Conflict(result);
 
         return Ok(result);

@@ -9,9 +9,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
         builder => builder
-            .AllowAnyOrigin()
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+
+            .AllowCredentials()
+            .SetIsOriginAllowed(hostname => true)
+            );
 });
 
 builder.Services.AddScoped<UserService>();
