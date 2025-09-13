@@ -15,7 +15,7 @@ public static class TokenHandler
         return Convert.ToBase64String(randomBytes);
     }
 
-    public static string GenerateAccessToken(User user, string secret, int expireMinutes = 15)
+    public static string GenerateAccessToken(User user, string secret, string issuer, string audience, int expireMinutes = 15)
     {
         var securityTokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(secret);
@@ -24,11 +24,15 @@ public static class TokenHandler
         {
             Subject = new ClaimsIdentity(new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-            }),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+        }),
             Expires = DateTime.UtcNow.AddMinutes(expireMinutes),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            Issuer = issuer,
+            Audience = audience,
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha256Signature)
         };
 
         var token = securityTokenHandler.CreateToken(tokenDescription);

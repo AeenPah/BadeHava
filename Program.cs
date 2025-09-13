@@ -1,10 +1,31 @@
 using Microsoft.EntityFrameworkCore;
 using BadeHava.Data;
 using BadeHava.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add CORS policy
+/* ------------------------ Authentication Middleware ----------------------- */
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+    };
+});
+
+/* ------------------------------- CORS policy ------------------------------ */
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -27,6 +48,10 @@ var app = builder.Build();
 
 // Use CORS
 app.UseCors("AllowAll");
+
+// Authentication & Authorization
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseHttpsRedirection();
 app.MapControllers();

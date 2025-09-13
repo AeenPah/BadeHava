@@ -67,8 +67,10 @@ public class AuthService
             };
 
         string secret = _configuration["JWT:Secret"] ?? string.Empty;
+        string issuer = _configuration["JWT:Issuer"] ?? string.Empty;
+        string audience = _configuration["JWT:Audience"] ?? string.Empty;
         string refreshToken = TokenHandler.GenerateRefreshToken();
-        string accessToken = TokenHandler.GenerateAccessToken(existingUser, secret);
+        string accessToken = TokenHandler.GenerateAccessToken(existingUser, secret, issuer, audience);
 
         // Update Users refreshToken DB
         existingUser.RefreshToken = refreshToken;

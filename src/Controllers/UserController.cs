@@ -1,5 +1,6 @@
 using BadeHava.DTOs;
 using BadeHava.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BadeHava.Controllers;
@@ -11,6 +12,7 @@ public class UserController : ControllerBase
     private readonly UserService _userService;
     public UserController(UserService userService) { this._userService = userService; }
 
+    [Authorize]
     [HttpPost("search")]
     public async Task<IActionResult> Search([FromBody] SearchRequest request)
     {
