@@ -4,6 +4,7 @@ using BadeHava.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using BadeHava.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]!))
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["accessToken"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("presenceHub"))
+                context.Token = accessToken;
+            return Task.CompletedTask;
+        }
+    };
 });
 
 /* ------------------------------- CORS policy ------------------------------ */
@@ -40,7 +53,9 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();
+
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=DBBadeHava.db"));
 
@@ -55,5 +70,6 @@ app.UseAuthorization();
 
 app.UseHttpsRedirection();
 app.MapControllers();
+app.MapHub<PresenceHub>("/presenceHub");
 
 app.Run();
