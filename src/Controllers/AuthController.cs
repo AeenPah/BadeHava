@@ -28,4 +28,13 @@ public class AuthController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh()
+    {
+        var result = await _authService.RefreshAuth(Request, Response);
+        if (!result.Success) return Unauthorized(result);
+
+        return Ok(result);
+    }
 }
