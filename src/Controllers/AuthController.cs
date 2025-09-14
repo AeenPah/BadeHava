@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using BadeHava.DTOs;
 using BadeHava.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BadeHava.Controllers;
@@ -34,6 +36,20 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.RefreshAuth(Request, Response);
         if (!result.Success) return Unauthorized(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null)
+            return BadRequest();
+
+        var result = await _authService.Logout(int.Parse(userId));
+        if (!result.Success) return BadRequest(result);
 
         return Ok(result);
     }

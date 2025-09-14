@@ -160,4 +160,26 @@ public class AuthService
             }
         };
     }
+
+    public async Task<Response<object>> Logout(int userId)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return new Response<object>
+            {
+                Success = false,
+                Message = "User does not found!"
+            };
+
+        user.RefreshToken = null;
+        user.RefreshTokenExpire = null;
+        _dbContext.Users.Update(user);
+        await _dbContext.SaveChangesAsync();
+
+        return new Response<object>
+        {
+            Success = true,
+            Message = "Logout successfully"
+        };
+    }
 }
