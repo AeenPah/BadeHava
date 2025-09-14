@@ -40,7 +40,9 @@ public class PresenceHub : Hub
         }
 
         var existingRequest = await _dbContext.Events
-              .FirstOrDefaultAsync(e => e.SenderUserId == senderId && e.ReceiveUserId == receiverUserId);
+              .FirstOrDefaultAsync(e => e.SenderUserId == int.Parse(senderId)
+                && e.ReceiveUserId == int.Parse(receiverUserId)
+                && e.EventType == Events.EventTypeEnum.FriendRequest);
         if (existingRequest is not null)
         {
             await Clients.User(senderId).SendAsync("FailedRequest", null, "Friend request already sent!");
@@ -50,9 +52,9 @@ public class PresenceHub : Hub
         // DB save the request
         var requestEvent = new Events
         {
-            EventType = "FriendRequest",
-            ReceiveUserId = receiverUserId,
-            SenderUserId = senderId!,
+            EventType = Events.EventTypeEnum.FriendRequest,
+            ReceiveUserId = int.Parse(receiverUserId),
+            SenderUserId = int.Parse(senderId!),
         };
         _dbContext.Events.Add(requestEvent);
         await _dbContext.SaveChangesAsync();
