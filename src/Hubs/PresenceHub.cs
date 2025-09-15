@@ -1,10 +1,12 @@
 using BadeHava.Data;
 using BadeHava.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace BadeHava.Hubs;
 
+[Authorize]
 public class PresenceHub : Hub
 {
     private readonly AppDbContext _dbContext;

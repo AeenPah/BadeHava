@@ -31,7 +31,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             var accessToken = context.Request.Query["accessToken"];
             var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("presenceHub"))
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/presenceHub"))
                 context.Token = accessToken;
             return Task.CompletedTask;
         }
