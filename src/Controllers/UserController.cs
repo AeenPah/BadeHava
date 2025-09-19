@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using BadeHava.DTOs;
 using BadeHava.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -18,6 +19,16 @@ public class UserController : ControllerBase
     {
         var result = await _userService.UserSearch(request.searchInput);
 
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("friends")]
+    public async Task<IActionResult> Friends()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var result = await _userService.UserFriends(int.Parse(userId!));
         return Ok(result);
     }
 }

@@ -42,14 +42,14 @@ public class EventService
         var existingRequest = await _dbContext.Events
                       .FirstOrDefaultAsync(e => e.SenderUserId == int.Parse(senderId)
                         && e.ReceiveUserId == int.Parse(receiverUserId)
-                        && e.EventType == Events.EventTypeEnum.FriendRequest);
+                        && e.EventType == Events.EventTypeEnum.FriendRequest
+                        && e.Status != Events.EventStatusEnum.Accepted);
         if (existingRequest is not null)
         {
-
             return new Response<object>
             {
                 Success = false,
-                Message = "User Not Found!"
+                Message = "Already requested!"
             };
         }
 
@@ -92,7 +92,7 @@ public class EventService
                 var friendShip = new Friendships
                 {
                     UserId1 = int.Parse(userId),
-                    UserId2 = friendRequest.ReceiveUserId
+                    UserId2 = friendRequest.SenderUserId
                 };
                 _dbContext.Friendships.Add(friendShip);
                 break;

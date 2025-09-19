@@ -13,6 +13,27 @@ public class UserService
         this._dbContext = dbContext;
     }
 
+    public async Task<Response<List<FriendResponse>>> UserFriends(int userId)
+    {
+        var friends = await _dbContext.Friendships
+            .Where(f => f.UserId1 == userId || f.UserId2 == userId)
+            .Select(f => new FriendResponse
+            {
+                UserId = f.UserId1 == userId ? f.User2.Id : f.User1.Id,
+                Username = f.UserId1 == userId ? f.User2.Username : f.User1.Username,
+                CreateAt = f.CreatedAt
+            })
+            .ToListAsync();
+
+
+        return new Response<List<FriendResponse>>
+        {
+            Message = "Success",
+            Success = true,
+            Data = friends
+        };
+    }
+
     public async Task<Response<SearchResponse>> UserSearch(string inputValue)
     {
         if (string.IsNullOrWhiteSpace(inputValue))
