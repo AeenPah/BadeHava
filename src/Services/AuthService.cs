@@ -161,6 +161,7 @@ public class AuthService
         };
     }
 
+    // TODO: Remove Cookie from url
     public async Task<Response<object>> Logout(int userId)
     {
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);

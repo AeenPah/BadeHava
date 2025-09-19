@@ -32,39 +32,39 @@ public class PresenceHub : Hub
     /* -------------------------------------------------------------------------- */
     /*                                   Events                                   */
     /* -------------------------------------------------------------------------- */
-    public async Task RequestFriendship(string receiverUserId)
-    {
-        var senderId = Context.UserIdentifier;
-        if (string.IsNullOrEmpty(senderId))
-        {
-            await Clients.Caller.SendAsync("FailedRequest", null, "Unauthorized user.");
-            return;
-        }
+    // public async Task RequestFriendship(string receiverUserId)
+    // {
+    //     var senderId = Context.UserIdentifier;
+    //     if (string.IsNullOrEmpty(senderId))
+    //     {
+    //         await Clients.Caller.SendAsync("FailedRequest", null, "Unauthorized user.");
+    //         return;
+    //     }
 
-        var existingRequest = await _dbContext.Events
-              .FirstOrDefaultAsync(e => e.SenderUserId == int.Parse(senderId)
-                && e.ReceiveUserId == int.Parse(receiverUserId)
-                && e.EventType == Events.EventTypeEnum.FriendRequest);
-        if (existingRequest is not null)
-        {
-            await Clients.User(senderId).SendAsync("FailedRequest", null, "Friend request already sent!");
-            return;
-        }
+    //     var existingRequest = await _dbContext.Events
+    //           .FirstOrDefaultAsync(e => e.SenderUserId == int.Parse(senderId)
+    //             && e.ReceiveUserId == int.Parse(receiverUserId)
+    //             && e.EventType == Events.EventTypeEnum.FriendRequest);
+    //     if (existingRequest is not null)
+    //     {
+    //         await Clients.User(senderId).SendAsync("FailedRequest", null, "Friend request already sent!");
+    //         return;
+    //     }
 
-        // DB save the request
-        var requestEvent = new Events
-        {
-            EventType = Events.EventTypeEnum.FriendRequest,
-            ReceiveUserId = int.Parse(receiverUserId),
-            SenderUserId = int.Parse(senderId!),
-        };
-        _dbContext.Events.Add(requestEvent);
-        await _dbContext.SaveChangesAsync();
+    //     // DB save the request
+    //     var requestEvent = new Events
+    //     {
+    //         EventType = Events.EventTypeEnum.FriendRequest,
+    //         ReceiveUserId = int.Parse(receiverUserId),
+    //         SenderUserId = int.Parse(senderId!),
+    //     };
+    //     _dbContext.Events.Add(requestEvent);
+    //     await _dbContext.SaveChangesAsync();
 
-        // Notify receiver
-        await Clients.User(receiverUserId).SendAsync("FriendRequest", senderId, "You have a new friend request!");
+    //     // Notify receiver
+    //     await Clients.User(receiverUserId).SendAsync("FriendRequest", senderId, "You have a new friend request!");
 
-        // Confirm to sender
-        await Clients.User(senderId).SendAsync("RequestSent", receiverUserId, "Friend request sent successfully!");
-    }
+    //     // Confirm to sender
+    //     await Clients.User(senderId).SendAsync("RequestSent", receiverUserId, "Friend request sent successfully!");
+    // }
 }

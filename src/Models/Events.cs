@@ -12,11 +12,19 @@ public class Events
         Block,
         ChatRequest
     }
+    public enum EventStatusEnum
+    {
+        Pending,
+        Accepted,
+        Declined
+    }
 
     [Key]
     public int Id { get; set; }
 
     public EventTypeEnum EventType { get; set; }
+
+    public EventStatusEnum Status { get; set; } = EventStatusEnum.Pending;
 
     [Required]
     public int SenderUserId { get; set; }
@@ -24,7 +32,7 @@ public class Events
     [Required]
     public int ReceiveUserId { get; set; }
 
-    public bool Seen = false;
+    public bool Seen { get; set; } = false;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
