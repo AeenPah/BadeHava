@@ -88,6 +88,13 @@ public class EventService
         {
             case "Accept":
                 friendRequest.Status = Events.EventStatusEnum.Accepted;
+
+                var friendShip = new Friendships
+                {
+                    UserId1 = int.Parse(userId),
+                    UserId2 = friendRequest.ReceiveUserId
+                };
+                _dbContext.Friendships.Add(friendShip);
                 break;
             case "Decline":
                 friendRequest.Status = Events.EventStatusEnum.Declined;
