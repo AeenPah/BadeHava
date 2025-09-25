@@ -43,7 +43,7 @@ public class EventService
                       .FirstOrDefaultAsync(e => e.SenderUserId == int.Parse(senderId)
                         && e.ReceiveUserId == int.Parse(receiverUserId)
                         && e.EventType == Events.EventTypeEnum.FriendRequest
-                        && e.Status != Events.EventStatusEnum.Accepted);
+                        && e.Status == Events.EventStatusEnum.Pending);
         if (existingRequest is not null)
         {
             return new Response<object>
