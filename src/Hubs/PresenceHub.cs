@@ -28,23 +28,23 @@ public class PresenceHub : Hub
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // OnlineUsers.Remove(Context.UserIdentifier!);
-        var userId = Context.UserIdentifier!;
-        var connectionId = Context.ConnectionId;
+        // var userId = Context.UserIdentifier!;
+        // var connectionId = Context.ConnectionId;
 
-        var roomsWithUser = ChatRooms
-            .Where(r => r.Value.Contains(userId))
-            .Select(r => r.Key)
-            .ToList();
+        // var roomsWithUser = ChatRooms
+        //     .Where(r => r.Value.Contains(userId))
+        //     .Select(r => r.Key)
+        //     .ToList();
 
-        foreach (var roomId in roomsWithUser)
-        {
-            // ChatRooms[roomId].Remove(userId);
+        // foreach (var roomId in roomsWithUser)
+        // {
+        // ChatRooms[roomId].Remove(userId);
 
-            // if (ChatRooms[roomId].Count() == 0) ChatRooms.Remove(roomId);
+        // if (ChatRooms[roomId].Count() == 0) ChatRooms.Remove(roomId);
 
-            await Groups.RemoveFromGroupAsync(connectionId, roomId);
-            await Clients.Group(roomId).SendAsync("UserLeft", userId, userId);
-        }
+        // await Groups.RemoveFromGroupAsync(connectionId, roomId);
+        // await Clients.Group(roomId).SendAsync("UserLeft", userId, userId);
+        // }
 
         await base.OnDisconnectedAsync(exception);
     }
@@ -147,5 +147,23 @@ public class PresenceHub : Hub
         string roomId = $"{chatReqEvent.SenderUserId}-{chatReqEvent.ReceiveUserId}";
         ChatRooms.Remove(roomId);
         await Clients.Caller.SendAsync("ChatReqRefused", null, "Chat Req Failed");
+    }
+
+    public async Task SendMessage(string roomId, string message)
+    {
+        var userId = Context.UserIdentifier!;
+
+        if (!ChatRooms.TryGetValue(roomId, out var members))
+        {
+            await Clients.Caller.SendAsync("FailedRequest", null, "Room is not valid");
+            return;
+        }
+        if (!members.Contains(userId))
+        {
+            await Clients.Caller.SendAsync("FailedRequest", null, "You are not a member of this room");
+            return;
+        }
+
+        await Clients.Group(roomId).SendAsync("Message", userId, message);
     }
 }
