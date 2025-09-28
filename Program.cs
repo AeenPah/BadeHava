@@ -51,6 +51,9 @@ builder.Services.AddCors(options =>
             );
 });
 
+builder.WebHost.UseKestrel()
+    .UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:5001");
+
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<EventService>();

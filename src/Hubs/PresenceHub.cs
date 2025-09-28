@@ -164,6 +164,7 @@ public class PresenceHub : Hub
             return;
         }
 
-        await Clients.Group(roomId).SendAsync("Message", userId, message);
+        await Clients.Caller.SendAsync("My-Message", message);
+        await Clients.OthersInGroup(roomId).SendAsync("Message", userId, message);
     }
 }
