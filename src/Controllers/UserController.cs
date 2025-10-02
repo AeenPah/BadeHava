@@ -31,4 +31,14 @@ public class UserController : ControllerBase
         var result = await _userService.UserFriends(int.Parse(userId!));
         return Ok(result);
     }
+
+    [Authorize]
+    [HttpPost("avatar")]
+    public async Task<IActionResult> AvatarUrl([FromBody] AvatarRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var result = await _userService.userAvatarUrl(int.Parse(userId!), request.AvatarUrl);
+        return Ok(result);
+    }
 }

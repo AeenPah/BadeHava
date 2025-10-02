@@ -66,4 +66,24 @@ public class UserService
             },
         };
     }
+
+    public async Task<Response<object>> userAvatarUrl(int userId, string url)
+    {
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+            return new Response<object>
+            {
+                Success = false,
+                Message = "User Not found",
+            };
+
+        user.AvatarPicUrl = url;
+        await _dbContext.SaveChangesAsync();
+
+        return new Response<object>
+        {
+            Success = true,
+            Message = "Success"
+        };
+    }
 }

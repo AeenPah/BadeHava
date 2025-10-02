@@ -20,5 +20,7 @@ public class User
 
     public DateTime? RefreshTokenExpire { get; set; } = null;
 
+    public string? AvatarPicUrl { get; set; } = null;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -99,6 +99,7 @@ public class AuthService
                 UserId = existingUser.Id,
                 AccessToken = accessToken,
                 Username = existingUser.Username,
+                AvatarUrl = existingUser.AvatarPicUrl
             }
         };
     }
