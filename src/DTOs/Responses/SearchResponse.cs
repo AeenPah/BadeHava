@@ -10,4 +10,5 @@ public class UserSearchResult
 {
     public int UserId { get; set; }
     public required string Username { get; set; }
+    public string? AvatarPicUrl { get; set; }
 }

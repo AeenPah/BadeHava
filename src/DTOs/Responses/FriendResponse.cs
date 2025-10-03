@@ -10,6 +10,8 @@ public class FriendResponse
     [Required]
     public string Username { get; set; } = null!;
 
+    public string? AvatarPicUrl { get; set; }
+
     [Required]
     public DateTime CreateAt { get; set; }
 }
