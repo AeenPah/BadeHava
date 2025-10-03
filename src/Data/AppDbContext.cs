@@ -10,4 +10,11 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Events> Events { get; set; }
     public DbSet<Friendships> Friendships { get; set; }
+
+    public DbSet<UserGroupChat> UserGroupChat { get; set; }
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserGroupChat>()
+            .HasKey(gc => new { gc.GroupChatId, gc.UserId });
+    }
 }

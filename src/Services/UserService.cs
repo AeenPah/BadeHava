@@ -21,6 +21,7 @@ public class UserService
             {
                 UserId = f.UserId1 == userId ? f.User2.Id : f.User1.Id,
                 Username = f.UserId1 == userId ? f.User2.Username : f.User1.Username,
+                AvatarPicUrl = f.UserId1 == userId ? f.User2.AvatarPicUrl : f.User1.AvatarPicUrl,
                 CreateAt = f.CreatedAt
             })
             .ToListAsync();
@@ -51,7 +52,8 @@ public class UserService
             .Select(u => new UserSearchResult
             {
                 Username = u.Username,
-                UserId = u.Id
+                UserId = u.Id,
+                AvatarPicUrl = u.AvatarPicUrl,
             })
             .Take(10)
             .ToListAsync();
