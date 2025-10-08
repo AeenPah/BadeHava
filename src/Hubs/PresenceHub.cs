@@ -10,10 +10,10 @@ namespace BadeHava.Hubs;
 public class HubResponse<T>
 {
     public bool Success { get; set; }
-    public string? Message { get; set; }
+    public string Message { get; set; } = null!;
     public T? Data { get; set; }
 
-    public static HubResponse<T> Ok(T data, string? message = null) =>
+    public static HubResponse<T> Ok(T data, string message) =>
         new HubResponse<T> { Success = true, Data = data, Message = message };
 
     public static HubResponse<T> Fail(string message) =>
@@ -151,7 +151,7 @@ public class PresenceHub : Hub
             Username = sender.Username,
             UserAvatarUrl = sender.AvatarPicUrl,
         };
-        await Clients.User(receiverUserId).SendAsync("ChatRequest", HubResponse<ChatUser>.Ok(data, "Success"));
+        await Clients.User(receiverUserId).SendAsync("ChatRequest", HubResponse<ChatUser>.Ok(data, "New chat request received."));
 
         // Confirm to sender
         await Clients.Caller.SendAsync("RequestSent", HubResponse<object?>.Ok(null, "Chat request sent successfully!"));
@@ -224,7 +224,7 @@ public class PresenceHub : Hub
             && gc.GroupChatId == roomId);
         if (chatRoom is null)
         {
-            await Clients.Caller.SendAsync("Failed Request", HubResponse.Fail("No chat room found!"));
+            await Clients.Caller.SendAsync("FailedRequest", HubResponse.Fail("No chat room found!"));
             return;
         }
 
@@ -241,9 +241,9 @@ public class PresenceHub : Hub
             })
             .ToList();
 
-        // May send to other in group that this member joined
+        // TODO: May send to other in group that this member joined
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.Caller.SendAsync("JoinedChatRoom", HubResponse<List<ChatUser>>.Ok(otherRoomUsers, "Success"));
+        await Clients.Caller.SendAsync("JoinedChatRoom", HubResponse<List<ChatUser>>.Ok(otherRoomUsers, "Success joined room"));
     }
 
     public async Task RefuseChatRequest(int eventId)
@@ -270,7 +270,7 @@ public class PresenceHub : Hub
             Username = chatReqEvent.Receiver.Username,
             UserAvatarUrl = chatReqEvent.Receiver.AvatarPicUrl
         };
-        await Clients.User(chatReqEvent.SenderUserId.ToString()).SendAsync("ChatReqRefused", HubResponse<ChatUser>.Ok(receiverUser, "Chat Req refused"));
+        await Clients.User(chatReqEvent.SenderUserId.ToString()).SendAsync("ChatReqRefusedBy", HubResponse<ChatUser>.Ok(receiverUser, "Chat Req refused"));
         await Clients.Caller.SendAsync("ChatReqRefused", HubResponse<object?>.Ok(null, "Chat Req refused successfully"));
     }
 
@@ -290,7 +290,7 @@ public class PresenceHub : Hub
             Message = message,
         };
 
-        await Clients.Caller.SendAsync("My-Message", HubResponse<ChatMessage>.Ok(chatMessage));
-        await Clients.OthersInGroup(roomId).SendAsync("Message", HubResponse<ChatMessage>.Ok(chatMessage));
+        await Clients.Caller.SendAsync("My-Message", HubResponse<ChatMessage>.Ok(chatMessage, ""));
+        await Clients.OthersInGroup(roomId).SendAsync("Message", HubResponse<ChatMessage>.Ok(chatMessage, ""));
     }
 }
