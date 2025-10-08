@@ -21,18 +21,6 @@ public class HubResponse<T>
 }
 public class HubResponse : HubResponse<object> { }
 
-public class ChatRoomMember
-{
-    [Required]
-    public string UserId { get; set; } = null!;
-
-    [Required]
-    public string UserName { get; set; } = null!;
-
-    public string? Avatar { get; set; }
-}
-
-
 [Authorize]
 public class PresenceHub : Hub
 {
@@ -42,28 +30,63 @@ public class PresenceHub : Hub
     public PresenceHub(AppDbContext appDbContext) { this._dbContext = appDbContext; }
 
     /* -------------------------------------------------------------------------- */
+    /*                                    Types                                   */
+    /* -------------------------------------------------------------------------- */
+
+    protected class ChatRoomMember
+    {
+        [Required]
+        public string UserId { get; set; } = null!;
+
+        [Required]
+        public string UserName { get; set; } = null!;
+
+        public string? Avatar { get; set; }
+    }
+    protected class ChatMessage
+    {
+        [Required]
+        public string Message { get; set; } = null!;
+
+        [Required]
+        public int From { set; get; }
+
+        public bool Seen { get; set; } = false;
+    }
+    protected class ChatUser
+    {
+        [Required]
+        public string UserId { get; set; } = null!;
+
+        [Required]
+        public string Username { get; set; } = null!;
+
+        public string? UserAvatarUrl { get; set; }
+    }
+
+    /* -------------------------------------------------------------------------- */
     /*                                Helper Methods                              */
     /* -------------------------------------------------------------------------- */
 
-    private async Task<List<ChatRoomMember>?> GetRoomOrFail(string roomId)
-    {
-        if (!ChatRooms.TryGetValue(roomId, out var members))
-        {
-            await Clients.Caller.SendAsync("Response", HubResponse.Fail("Room is not valid"));
-            return null;
-        }
-        return members;
-    }
+    // private async Task<List<ChatRoomMember>?> GetRoomOrFail(string roomId)
+    // {
+    //     if (!ChatRooms.TryGetValue(roomId, out var members))
+    //     {
+    //         await Clients.Caller.SendAsync("Response", HubResponse.Fail("Room is not valid"));
+    //         return null;
+    //     }
+    //     return members;
+    // }
 
-    private async Task<ChatRoomMember?> EnsureUserInRoom(List<ChatRoomMember> members, string userId)
-    {
-        var member = members.FirstOrDefault(m => m.UserId == userId);
-        if (member is null)
-        {
-            await Clients.Caller.SendAsync("Response", HubResponse.Fail("You are not a member of this room"));
-        }
-        return member;
-    }
+    // private async Task<ChatRoomMember?> EnsureUserInRoom(List<ChatRoomMember> members, string userId)
+    // {
+    //     var member = members.FirstOrDefault(m => m.UserId == userId);
+    //     if (member is null)
+    //     {
+    //         await Clients.Caller.SendAsync("Response", HubResponse.Fail("You are not a member of this room"));
+    //     }
+    //     return member;
+    // }
 
     /* -------------------------------------------------------------------------- */
     /*                              Override Methods                              */
@@ -122,10 +145,16 @@ public class PresenceHub : Hub
         await _dbContext.SaveChangesAsync();
 
         // Notify receiver
-        await Clients.User(receiverUserId).SendAsync("ChatRequest", new { senderId, senderUsername = sender.Username });
+        ChatUser data = new()
+        {
+            UserId = senderId,
+            Username = sender.Username,
+            UserAvatarUrl = sender.AvatarPicUrl,
+        };
+        await Clients.User(receiverUserId).SendAsync("ChatRequest", HubResponse<ChatUser>.Ok(data, "Success"));
 
         // Confirm to sender
-        await Clients.Caller.SendAsync("RequestSent", "Chat request sent successfully!");
+        await Clients.Caller.SendAsync("RequestSent", HubResponse<object?>.Ok(null, "Chat request sent successfully!"));
     }
 
     public async Task AcceptChatRequest(int eventId)
@@ -134,11 +163,14 @@ public class PresenceHub : Hub
         var chatReqEvent = await _dbContext.Events
             .Include(e => e.Sender)
             .Include(e => e.Receiver)
-            .FirstOrDefaultAsync(e => e.Id == eventId);
+            .FirstOrDefaultAsync(e => e.Id == eventId
+                && e.ReceiveUserId == int.Parse(Context.UserIdentifier!)
+                && e.EventType == Events.EventTypeEnum.ChatRequest
+                && e.Status == Events.EventStatusEnum.Pending);
 
         if (chatReqEvent is null)
         {
-            await Clients.Caller.SendAsync("FailedRequest", HubResponse.Fail("Request is not valid"));
+            await Clients.Caller.SendAsync("FailedRequest", HubResponse.Fail("Request event is not valid"));
             return;
         }
         chatReqEvent.Status = Events.EventStatusEnum.Accepted;
@@ -155,52 +187,110 @@ public class PresenceHub : Hub
 
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
 
-        await Clients.User(chatReqEvent.SenderUserId.ToString()).SendAsync("UserAcceptChatRequest", roomId);
 
-        await Clients.Caller.SendAsync("JoinedRoom", new { chatReqEvent.Sender.Username, chatReqEvent.Sender.Id, chatReqEvent.Sender.AvatarPicUrl });
+        ChatUser receiverUser = new()
+        {
+            UserId = chatReqEvent.Receiver.Id.ToString(),
+            Username = chatReqEvent.Receiver.Username,
+            UserAvatarUrl = chatReqEvent.Receiver.AvatarPicUrl,
+        };
+        ChatRoom chatRoom = new() { RoomId = roomId, RoomsUsers = [receiverUser] };
+        await Clients.User(chatReqEvent.SenderUserId.ToString()).SendAsync("UserAcceptChatRequest", HubResponse<ChatRoom>.Ok(chatRoom, "User joined the room."));
+
+        ChatUser senderUser = new()
+        {
+            UserId = chatReqEvent.Sender.Id.ToString(),
+            Username = chatReqEvent.Sender.Username.ToString(),
+            UserAvatarUrl = chatReqEvent.Sender.AvatarPicUrl
+        };
+        ChatRoom chatRoom2 = new() { RoomId = roomId, RoomsUsers = [senderUser] };
+        await Clients.Caller.SendAsync("JoinedRoom", HubResponse<ChatRoom>.Ok(chatRoom2, "You joined the room!"));
+    }
+    protected class ChatRoom
+    {
+        [Required]
+        public string RoomId { get; set; } = null!;
+
+        [Required]
+        public List<ChatUser> RoomsUsers { get; set; } = [];
     }
 
     public async Task JoinChatRoom(string roomId)
     {
         var userId = Context.UserIdentifier!;
 
-        var chatRoom = _dbContext.UserGroupChat.FirstOrDefaultAsync(gc => gc.UserId == int.Parse(userId) && gc.GroupChatId == roomId);
+        var chatRoom = _dbContext.UserGroupChat.FirstOrDefaultAsync(gc =>
+            gc.UserId == int.Parse(userId)
+            && gc.GroupChatId == roomId);
         if (chatRoom is null)
         {
             await Clients.Caller.SendAsync("Failed Request", HubResponse.Fail("No chat room found!"));
             return;
         }
 
+        var otherRoomUsers = _dbContext.UserGroupChat
+            .Include(gc => gc.User)
+            .Where(gc =>
+                gc.UserId != int.Parse(userId)
+                && gc.GroupChatId == roomId)
+            .Select(gc => new ChatUser
+            {
+                UserId = gc.User.Id.ToString(),
+                Username = gc.User.Username,
+                UserAvatarUrl = gc.User.AvatarPicUrl
+            })
+            .ToList();
+
+        // May send to other in group that this member joined
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-        await Clients.Caller.SendAsync("JoinedChatRoom", "Success");
+        await Clients.Caller.SendAsync("JoinedChatRoom", HubResponse<List<ChatUser>>.Ok(otherRoomUsers, "Success"));
     }
 
     public async Task RefuseChatRequest(int eventId)
     {
         // Validate event
-        var chatReqEvent = await _dbContext.Events.FirstOrDefaultAsync(e => e.Id == eventId);
+        var chatReqEvent = await _dbContext.Events
+            .Include(e => e.Receiver)
+            .FirstOrDefaultAsync(e =>
+                e.Id == eventId
+                && e.Status == Events.EventStatusEnum.Pending
+                && e.ReceiveUserId == int.Parse(Context.UserIdentifier!));
         if (chatReqEvent is null)
         {
-            await Clients.Caller.SendAsync("FailedRequest", HubResponse.Fail("Request is not valid"));
+            await Clients.Caller.SendAsync("FailedRequest", HubResponse.Fail("Request chat is not valid"));
             return;
         }
+
         chatReqEvent.Status = Events.EventStatusEnum.Declined;
         await _dbContext.SaveChangesAsync();
 
-        await Clients.User(chatReqEvent.SenderUserId.ToString()).SendAsync("ChatReqRefused", $"Chat Req refused from {chatReqEvent.Receiver.Username} successfully");
-        await Clients.Caller.SendAsync("ChatReqRefused", "Chat Req refused successfully");
+        ChatUser receiverUser = new()
+        {
+            UserId = chatReqEvent.Receiver.Id.ToString(),
+            Username = chatReqEvent.Receiver.Username,
+            UserAvatarUrl = chatReqEvent.Receiver.AvatarPicUrl
+        };
+        await Clients.User(chatReqEvent.SenderUserId.ToString()).SendAsync("ChatReqRefused", HubResponse<ChatUser>.Ok(receiverUser, "Chat Req refused"));
+        await Clients.Caller.SendAsync("ChatReqRefused", HubResponse<object?>.Ok(null, "Chat Req refused successfully"));
     }
 
     public async Task SendMessage(string roomId, string message)
     {
-        List<ChatRoomMember>? members = await GetRoomOrFail(roomId);
-        if (members is null) return;
+        // List<ChatRoomMember>? members = await GetRoomOrFail(roomId);
+        // if (members is null) return;
 
-        var userId = Context.UserIdentifier!;
-        ChatRoomMember? userMember = await EnsureUserInRoom(members, userId);
-        if (userMember is null) return;
+        // var userId = Context.UserIdentifier!;
+        // ChatRoomMember? userMember = await EnsureUserInRoom(members, userId);
+        // if (userMember is null) return;
 
-        await Clients.Caller.SendAsync("My-Message", message);
-        await Clients.OthersInGroup(roomId).SendAsync("Message", userId, message);
+        // TODO: May later add validation for roomId and user
+        ChatMessage chatMessage = new()
+        {
+            From = int.Parse(Context.UserIdentifier!),
+            Message = message,
+        };
+
+        await Clients.Caller.SendAsync("My-Message", HubResponse<ChatMessage>.Ok(chatMessage));
+        await Clients.OthersInGroup(roomId).SendAsync("Message", HubResponse<ChatMessage>.Ok(chatMessage));
     }
 }
