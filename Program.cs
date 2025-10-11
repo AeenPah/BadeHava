@@ -51,8 +51,8 @@ builder.Services.AddCors(options =>
             );
 });
 
-builder.WebHost.UseKestrel()
-    .UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:5001");
+// builder.WebHost.UseKestrel()
+//     .UseUrls("http://0.0.0.0:5000");
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<UserService>();
@@ -64,6 +64,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=DBBadeHava.db"));
 
 var app = builder.Build();
+
+// Builds the DB on starts (for docker)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 // Use CORS
 app.UseCors("AllowAll");
