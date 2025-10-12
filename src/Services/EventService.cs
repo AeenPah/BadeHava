@@ -22,7 +22,12 @@ public class EventService
                    {
                        EventId = e.Id,
                        EventType = e.EventType,
-                       Sender = new EventsResponse.UserType { UserId = e.SenderUserId, Username = e.Sender.Username },
+                       Sender = new EventsResponse.UserType
+                       {
+                           UserId = e.SenderUserId,
+                           Username = e.Sender.Username,
+                           AvatarPicUrl = e.Sender.AvatarPicUrl
+                       },
                        CreatedAt = e.CreatedAt,
                        Seen = e.Seen,
                        Status = e.Status

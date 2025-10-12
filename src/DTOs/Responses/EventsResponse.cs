@@ -10,6 +10,9 @@ public class EventsResponse
 
         [Required]
         public string Username { get; set; } = null!;
+
+        public string? AvatarPicUrl { get; set; }
+
         [Required]
         public int UserId { get; set; }
     }
