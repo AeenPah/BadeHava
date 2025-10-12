@@ -29,5 +29,7 @@ When one user goes offline, the connection ends — no history, no message savin
 🧠 Tech Stack
 
 .NET 9 Web API — core backend framework
+
 dotnet ef (Entity Framework) — for DB handling
+
 SignalR — for real-time message transfer
