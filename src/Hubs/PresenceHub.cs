@@ -308,7 +308,12 @@ public class PresenceHub : Hub
         _dbContext.Events.Add(requestEvent);
         await _dbContext.SaveChangesAsync();
 
+        ChatUser? sender = await _dbContext.Users
+            .Select(u => new ChatUser { UserId = u.Id.ToString(), UserAvatarUrl = u.AvatarPicUrl, Username = u.Username })
+            .FirstOrDefaultAsync(u => u.UserId == senderId.ToString());
+
         await Clients.Caller.SendAsync("FriendReqSend", HubResponse<object?>.Ok(null, "FriendRequest send successfully!"));
+        await Clients.User(receiverId.ToString()).SendAsync("FriendReqReceived", HubResponse<ChatUser>.Ok(sender!, "Friend request received."));
     }
 
     public async Task RespondFriendRequest(int eventId, string action)
@@ -356,6 +361,6 @@ public class PresenceHub : Hub
         };
 
         await Clients.Caller.SendAsync("RespondFriendRequest", HubResponse<object?>.Ok(null, "Friend request responded successfully!"));
-        await Clients.User(friendRequest.SenderUserId.ToString()).SendAsync("SenderRespondFriendRequest", HubResponse<RespondRequest>.Ok(resFriendReq, $"User {action} your friend request"));
+        await Clients.User(friendRequest.SenderUserId.ToString()).SendAsync("SenderRespondFriendRequest", HubResponse<RespondRequest>.Ok(resFriendReq, $"User {resFriendReq.user.Username}, {action} your friend request"));
     }
 }
