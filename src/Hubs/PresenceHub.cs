@@ -73,30 +73,6 @@ public class PresenceHub : Hub
     }
 
     /* -------------------------------------------------------------------------- */
-    /*                                Helper Methods                              */
-    /* -------------------------------------------------------------------------- */
-
-    // private async Task<List<ChatRoomMember>?> GetRoomOrFail(string roomId)
-    // {
-    //     if (!ChatRooms.TryGetValue(roomId, out var members))
-    //     {
-    //         await Clients.Caller.SendAsync("Response", HubResponse.Fail("Room is not valid"));
-    //         return null;
-    //     }
-    //     return members;
-    // }
-
-    // private async Task<ChatRoomMember?> EnsureUserInRoom(List<ChatRoomMember> members, string userId)
-    // {
-    //     var member = members.FirstOrDefault(m => m.UserId == userId);
-    //     if (member is null)
-    //     {
-    //         await Clients.Caller.SendAsync("Response", HubResponse.Fail("You are not a member of this room"));
-    //     }
-    //     return member;
-    // }
-
-    /* -------------------------------------------------------------------------- */
     /*                              Override Methods                              */
     /* -------------------------------------------------------------------------- */
     public override Task OnConnectedAsync()
@@ -284,13 +260,6 @@ public class PresenceHub : Hub
 
     public async Task SendMessage(string roomId, string message)
     {
-        // List<ChatRoomMember>? members = await GetRoomOrFail(roomId);
-        // if (members is null) return;
-
-        // var userId = Context.UserIdentifier!;
-        // ChatRoomMember? userMember = await EnsureUserInRoom(members, userId);
-        // if (userMember is null) return;
-
         // TODO: May later add validation for roomId and user
         ChatMessage chatMessage = new()
         {
