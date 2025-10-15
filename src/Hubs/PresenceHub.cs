@@ -63,6 +63,14 @@ public class PresenceHub : Hub
 
         public string? UserAvatarUrl { get; set; }
     }
+    protected class RespondRequest
+    {
+        [Required]
+        public ChatUser user { set; get; } = null!;
+
+        [Required]
+        public string Action { set; get; } = null!;
+    }
 
     /* -------------------------------------------------------------------------- */
     /*                                Helper Methods                              */
@@ -292,5 +300,93 @@ public class PresenceHub : Hub
 
         await Clients.Caller.SendAsync("My-Message", HubResponse<ChatMessage>.Ok(chatMessage, ""));
         await Clients.OthersInGroup(roomId).SendAsync("Message", HubResponse<ChatMessage>.Ok(chatMessage, ""));
+    }
+
+    public async Task FriendRequest(int receiverId)
+    {
+        var senderId = int.Parse(Context.UserIdentifier!);
+
+        var existingRequest = await _dbContext.Events
+            .FirstOrDefaultAsync(e => e.SenderUserId == senderId
+                && e.ReceiveUserId == receiverId
+                && e.EventType == Events.EventTypeEnum.FriendRequest
+                && e.Status == Events.EventStatusEnum.Pending
+            );
+        if (existingRequest is not null)
+        {
+            await Clients.Caller.SendAsync("FailedRequest", "Already friend request exists.");
+            return;
+        }
+
+        var existingFriend = await _dbContext.Friendships
+            .FirstOrDefaultAsync(f =>
+                (f.UserId1 == senderId && f.UserId2 == receiverId)
+                || (f.UserId2 == senderId && f.UserId1 == receiverId)
+            );
+        if (existingFriend is not null)
+        {
+            await Clients.Caller.SendAsync("FailedRequest", "User is already your friend.");
+            return;
+        }
+
+        // DB save the request
+        var requestEvent = new Events
+        {
+            EventType = Events.EventTypeEnum.FriendRequest,
+            ReceiveUserId = receiverId,
+            SenderUserId = senderId,
+        };
+        _dbContext.Events.Add(requestEvent);
+        await _dbContext.SaveChangesAsync();
+
+        await Clients.Caller.SendAsync("FriendReqSend", HubResponse<object?>.Ok(null, "FriendRequest send successfully!"));
+    }
+
+    public async Task RespondFriendRequest(int eventId, string action)
+    {
+        var userId = int.Parse(Context.UserIdentifier!);
+
+        var friendRequest = await _dbContext.Events
+            .Include(e => e.Receiver)
+            .FirstOrDefaultAsync(e => e.Id == eventId
+                && e.ReceiveUserId == userId);
+        if (friendRequest is null)
+        {
+            await Clients.Caller.SendAsync("FailedRequest", HubResponse.Fail("Request does not found!"));
+            return;
+        }
+
+        switch (action)
+        {
+            case "Accept":
+                friendRequest.Status = Events.EventStatusEnum.Accepted;
+
+                var friendShip = new Friendships
+                {
+                    UserId1 = userId,
+                    UserId2 = friendRequest.SenderUserId
+                };
+                _dbContext.Friendships.Add(friendShip);
+                break;
+            case "Decline":
+                friendRequest.Status = Events.EventStatusEnum.Declined;
+                break;
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        RespondRequest resFriendReq = new()
+        {
+            user = new()
+            {
+                UserId = friendRequest.Receiver.Id.ToString(),
+                Username = friendRequest.Receiver.Username,
+                UserAvatarUrl = friendRequest.Receiver.AvatarPicUrl
+            },
+            Action = action
+        };
+
+        await Clients.Caller.SendAsync("RespondFriendRequest", HubResponse<object?>.Ok(null, "Friend request responded successfully!"));
+        await Clients.User(friendRequest.SenderUserId.ToString()).SendAsync("SenderRespondFriendRequest", HubResponse<RespondRequest>.Ok(resFriendReq, $"User {action} your friend request"));
     }
 }
