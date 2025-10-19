@@ -16,5 +16,8 @@ public class AppDbContext : DbContext
     {
         modelBuilder.Entity<UserGroupChat>()
             .HasKey(gc => new { gc.GroupChatId, gc.UserId });
+
+        modelBuilder.Entity<UserGroupChat>()
+            .HasIndex(gc => gc.GroupChatId);
     }
 }

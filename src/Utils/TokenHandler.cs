@@ -62,4 +62,13 @@ public static class TokenHandler
             return null;
         }
     }
+
+    public static string GenerateGuid()
+    {
+        return Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+            .Replace("=", "")
+            .Replace("+", "")
+            .Replace("/", "")
+            .Substring(0, 10);
+    }
 }

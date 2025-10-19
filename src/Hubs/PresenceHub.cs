@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using BadeHava.Data;
 using BadeHava.Models;
+using BadeHava.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -71,20 +72,27 @@ public class PresenceHub : Hub
         [Required]
         public string Action { set; get; } = null!;
     }
+    protected class ChatRoom
+    {
+        [Required]
+        public string RoomId { get; set; } = null!;
+
+        [Required]
+        public List<ChatUser> RoomsUsers { get; set; } = [];
+    }
 
     /* -------------------------------------------------------------------------- */
     /*                              Override Methods                              */
     /* -------------------------------------------------------------------------- */
-    public override Task OnConnectedAsync()
-    {
-        Console.WriteLine($"Connected: {Context.ConnectionId}");
-        return base.OnConnectedAsync();
-    }
+    // public override Task OnConnectedAsync()
+    // {
+    //     return base.OnConnectedAsync();
+    // }
 
-    public override async Task OnDisconnectedAsync(Exception? exception)
-    {
-        await base.OnDisconnectedAsync(exception);
-    }
+    // public override async Task OnDisconnectedAsync(Exception? exception)
+    // {
+    //     await base.OnDisconnectedAsync(exception);
+    // }
 
     /* -------------------------------------------------------------------------- */
     /*                                   Events                                   */
@@ -159,7 +167,8 @@ public class PresenceHub : Hub
         }
         chatReqEvent.Status = Events.EventStatusEnum.Accepted;
 
-        string roomId = $"{chatReqEvent.SenderUserId}-{chatReqEvent.ReceiveUserId}";
+        string roomId = TokenHandler.GenerateGuid();
+
         UserGroupChat[] userGroupChats =
         {
             new UserGroupChat { GroupChatId = roomId, UserId = chatReqEvent.SenderUserId },
@@ -170,7 +179,6 @@ public class PresenceHub : Hub
         await _dbContext.SaveChangesAsync();
 
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-
 
         ChatUser receiverUser = new()
         {
@@ -189,14 +197,6 @@ public class PresenceHub : Hub
         };
         ChatRoom chatRoom2 = new() { RoomId = roomId, RoomsUsers = [senderUser] };
         await Clients.Caller.SendAsync("JoinedRoom", HubResponse<ChatRoom>.Ok(chatRoom2, "You joined the room!"));
-    }
-    protected class ChatRoom
-    {
-        [Required]
-        public string RoomId { get; set; } = null!;
-
-        [Required]
-        public List<ChatUser> RoomsUsers { get; set; } = [];
     }
 
     public async Task JoinChatRoom(string roomId)
