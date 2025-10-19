@@ -17,7 +17,9 @@ public class UserController : ControllerBase
     [HttpPost("search")]
     public async Task<IActionResult> Search([FromBody] SearchRequest request)
     {
-        var result = await _userService.UserSearch(request.searchInput);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var result = await _userService.UserSearch(request.searchInput, int.Parse(userId!));
 
         return Ok(result);
     }

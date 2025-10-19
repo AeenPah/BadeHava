@@ -35,7 +35,7 @@ public class UserService
         };
     }
 
-    public async Task<Response<SearchResponse>> UserSearch(string inputValue)
+    public async Task<Response<SearchResponse>> UserSearch(string inputValue, int userId)
     {
         if (string.IsNullOrWhiteSpace(inputValue))
         {
@@ -48,7 +48,9 @@ public class UserService
         }
 
         var foundUsers = await _dbContext.Users
-            .Where(u => u.Username.Contains(inputValue.ToLower()))
+            .Where(u =>
+                u.Username.Contains(inputValue.ToLower())
+                && u.Id != userId)
             .Select(u => new UserSearchResult
             {
                 Username = u.Username,
