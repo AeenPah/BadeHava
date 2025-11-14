@@ -61,7 +61,8 @@ builder.Services.AddScoped<EventService>();
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=DBBadeHava.db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
 
 var app = builder.Build();
 
