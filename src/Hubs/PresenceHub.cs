@@ -203,7 +203,7 @@ public class PresenceHub : Hub
     {
         var userId = Context.UserIdentifier!;
 
-        var chatRoom = _dbContext.UserGroupChat.FirstOrDefaultAsync(gc =>
+        var chatRoom = await _dbContext.UserGroupChat.FirstOrDefaultAsync(gc =>
             gc.UserId == int.Parse(userId)
             && gc.GroupChatId == roomId);
         if (chatRoom is null)
@@ -212,7 +212,7 @@ public class PresenceHub : Hub
             return;
         }
 
-        var otherRoomUsers = _dbContext.UserGroupChat
+        var otherRoomUsers = await _dbContext.UserGroupChat
             .Include(gc => gc.User)
             .Where(gc =>
                 gc.UserId != int.Parse(userId)
@@ -223,7 +223,7 @@ public class PresenceHub : Hub
                 Username = gc.User.Username,
                 UserAvatarUrl = gc.User.AvatarPicUrl
             })
-            .ToList();
+            .ToListAsync();
 
         // TODO: May send to other in group that this member joined
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
