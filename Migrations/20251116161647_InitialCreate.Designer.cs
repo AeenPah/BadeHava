@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BadeHava.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251114161346_NewDBPostgre")]
-    partial class NewDBPostgre
+    [Migration("20251116161647_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
